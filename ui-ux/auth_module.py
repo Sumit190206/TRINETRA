@@ -1,38 +1,47 @@
-# auth_module.py
 import sqlite3
-import bcrypt
 
-# Create database and table
+# -------------------------
+# DATABASE CREATION
+# -------------------------
 def create_db():
-    conn = sqlite3.connect("auth.db")
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
-                    username TEXT PRIMARY KEY,
-                    password BLOB
-                )''')
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT NOT NULL
+        )
+    """)
     conn.commit()
     conn.close()
 
-# Register new user
+# -------------------------
+# REGISTER NEW USER
+# -------------------------
 def register_user(username, password):
-    conn = sqlite3.connect("auth.db")
-    c = conn.cursor()
-    hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    try:
-        c.execute("INSERT INTO users VALUES (?, ?)", (username, hashed_pw))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        print("❌ Username already exists.")
-    conn.close()
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
 
-# Verify login
-def verify_user(username, password):
-    conn = sqlite3.connect("auth.db")
-    c = conn.cursor()
-    c.execute("SELECT password FROM users WHERE username = ?", (username,))
-    row = c.fetchone()
+    # Check if username already exists
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    existing_user = cursor.fetchone()
+
+    if existing_user:
+        conn.close()
+        return False  # Username taken
+
+    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    conn.commit()
     conn.close()
-    if row:
-        stored_pw = row[0]
-        return bcrypt.checkpw(password.encode(), stored_pw)
-    return False
+    return True  # Registration successful
+
+# -------------------------
+# VERIFY LOGIN
+# -------------------------
+def verify_user(username, password):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    user = cursor.fetchone()
+    conn.close()
+    return user is not None
