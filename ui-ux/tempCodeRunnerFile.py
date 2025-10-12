@@ -22,7 +22,7 @@ def show_loading_screen():
           font=("Arial", 20, "bold"), fg="white", bg="#0f172a").pack(pady=50)
 
     try:
-        eye_gif = Image.open("eye_open.gif")
+        eye_gif = Image.open(r"C:\Users\Sumit Patil\project\ui-ux\eye_open.gif")
         frames = [ImageTk.PhotoImage(frame.copy().resize((300, 300))) 
                   for frame in ImageSequence.Iterator(eye_gif)]
         label = Label(load, bg="#0f172a")

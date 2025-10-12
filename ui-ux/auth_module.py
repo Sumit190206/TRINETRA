@@ -1,47 +1,40 @@
+# ===== auth_module.py =====
 import sqlite3
+import os
 
-# -------------------------
-# DATABASE CREATION
-# -------------------------
+DB_FILE = "users.db"
+
 def create_db():
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-    cursor.execute("""
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
-            password TEXT NOT NULL
+            password TEXT
         )
     """)
     conn.commit()
     conn.close()
 
-# -------------------------
-# REGISTER NEW USER
-# -------------------------
 def register_user(username, password):
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-
-    # Check if username already exists
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    existing_user = cursor.fetchone()
-
-    if existing_user:
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
         conn.close()
-        return False  # Username taken
+        return True
+    except sqlite3.IntegrityError:
+        # username already exists
+        return False
+    except Exception as e:
+        print("Register error:", e)
+        return False
 
-    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-    conn.commit()
-    conn.close()
-    return True  # Registration successful
-
-# -------------------------
-# VERIFY LOGIN
-# -------------------------
 def verify_user(username, password):
-    conn = sqlite3.connect("users.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
-    user = cursor.fetchone()
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    data = cur.fetchone()
     conn.close()
-    return user is not None
+    return data is not None
